@@ -44,56 +44,78 @@
   <div id="timer">0:00:00 / 7:03:00</div> 
   <div id="bar-wrap"><div id="bar"></div></div>
     
-<audio id="audio" 1oop>
-  <source src="sound.mp3" type="audio/mpeg">
-</audio> 
+<audio id="audio" src="./sound.mp3" loop preload="auto"></audio>
     
 <script>
-  const TOTAL = 7 * 3600 + 3 * 60; // 7h 3min in seconds
+  
+  const TOTAL = 7 * 3600 + 3 * 60;
+
   const audio = document.getElementById('audio');
-  const btn = document. getElementById('btn');
+  const btn = document.getElementById('btn');
   const timer = document.getElementById('timer');
   const bar = document.getElementById('bar');
-  
-  audio.volume = 1.0; // Max volume
-  
+
+  audio.volume = 1.0;
+
   let elapsed = 0;
   let interval = null;
   let running = false;
+  let starting = false;
 
-  function fmt (s) {
-    const h = Math. floor (s / 3600);
-    const m = Math. floor( (s % 3600) / 60);
+  function fmt(s) {
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
     const sec = s % 60;
-    return ${h}:${String(m).padstart(2,'0')}:${String(sec) .padstart(2, '0')}*;
+
+    return String(h).padStart(2, '0') + ':' +
+           String(m).padStart(2, '0') + ':' +
+           String(sec).padStart(2, '0');
   }
-  
+
   function tick() {
     elapsed++;
-    timer. textContent = '${fmt(elapsed)} / 7:03:00 ;
-    bar.style.width = Math.min((elapsed /TOTAL) * 100,100) + 1%';
+
+    timer.textContent = fmt(elapsed) + ' / 07:03:00';
+    bar.style.width = Math.min((elapsed / TOTAL) * 100, 100) + '%';
+
     if (elapsed >= TOTAL) {
-      audio. pause();
-      audio. currentTime = 0;
-      clearInterval (interval);
-      btn. textContent = '• Done - Click to Restart';
-      elapsed = 0; running = false;
+      clearInterval(interval);
+      interval = null;
+      audio.pause();
+      audio.currentTime = 0;
+      elapsed = 0;
+      running = false;
+      btn.textContent = '▶ Start Typhoon Again';
     }
   }
-  
-  btn. addEventListener('click', () => {
+
+  btn.addEventListener('click', async () => {
+    if (starting) return;
+
     if (!running) {
-      audio. play();
-      interval = setInterval(tick, 1000);
-      btn. textContent = ' ⏸️ Pause';
-      running = true;
+      starting = true;
+      btn.disabled = true;
+
+      try {
+        await audio.play();
+        running = true;
+        interval = setInterval(tick, 1000);
+        btn.textContent = '⏸ Pause';
+      } catch (error) {
+        console.error('Audio playback failed:', error);btn.textContent = '▶ Retry Playing Typhoon';
+        alert('Audio could not start. Please try again.');
+      } finally {
+        starting = false;
+        btn.disabled = false;
+      }
     } else {
       audio.pause();
-      clearInterval (interval);
-      btn. textContent = '• Resume';
+      clearInterval(interval);
+      interval = null;
       running = false;
+      btn.textContent = '▶ Resume';
     }
-  }) ;
+  });
   </script>
 </body>
 </html>
